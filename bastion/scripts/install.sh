@@ -10,10 +10,9 @@ export PROMETHEUS_RELEASE_NAME="prometheus"
 export GRAFANA_RELEASE_NAME="grafana"
 export GRAFANA_PORT=8090
 
-
-
 # Actualizar el caché de paquetes
 sudo apt update 
+sudo apt upgrade -y
 sudo apt install -y unzip ca-certificates curl curl git
 
 
@@ -25,7 +24,7 @@ sudo /tmp/aws/install
 # Kubectl
 curl -L "https://s3.us-west-2.amazonaws.com/amazon-eks/1.26.2/2023-03-17/bin/linux/amd64/kubectl" -o "/usr/local/bin/kubectl"
 sudo chmod +x /usr/local/bin/kubectl
-#echo 'export PATH=$PATH:/usr/local/bin' >> /home/$USER/.bashrc
+echo 'export PATH=$PATH:/usr/local/bin' >> ~/.bashrc
 
 
 # eksctl
@@ -36,41 +35,64 @@ export PATH=$PATH:/usr/local/bin
 echo 'export PATH=$PATH:/usr/local/bin' >> ~/.bashrc
 eksctl version
 
+## Desacargas de repos e instalacion
 # Docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 echo "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt update
-sudo apt install -y docker-ce
-sudo systemctl enable docker
-sudo systemctl start docker
-
 # Helm
 curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-sudo apt update
-sudo apt install -y helm
-
 # Terraform
 wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
 sudo apt update
-sudo apt install -y terraform
-rm -rf /tmp/awscliv2.zip /tmp/aws /tmp/eksctl.tar.gz
+sudo apt install -y docker-ce docker-compose helm terraform
+sudo systemctl enable docker
+sudo systemctl start docker
 
 
-eksctl create cluster \
---name eks-mundos-e2401 \
---region us-east-1 \
---nodes 3 \
---node-type t2.small \
---with-oidc \
---ssh-access \
---ssh-public-key devops \
---managed \
---full-ecr-access \
---zones us-east-1a,us-east-1b,us-east-1c
+aws sts get-caller-identity >> /dev/null
+if [ $? -eq 0 ]
+then
+  echo "Credenciales testeadas, proceder con la creacion de cluster."
+
+
+  eksctl create cluster \
+    --name eks-mundos-e2401 \
+    --region us-east-1 \
+    --nodes 3 \
+    --node-type t2.small \
+    --with-oidc \
+    --ssh-access \
+    --ssh-public-key devops \
+    --managed \
+    --full-ecr-access \
+    --zones us-east-1a,us-east-1b,us-east-1c
+
+  if [ $? -eq 0 ]
+  then
+    echo "Cluster Setup Completo con eksctl ."
+  else
+    echo "Cluster Setup Falló mientras se ejecuto eksctl."
+  fi
+else
+  echo "Please run aws configure & set right credentials."
+  echo "Cluster setup failed."
+fi
+
 
 aws eks update-kubeconfig --name eks-mundos-e2401 --region us-east-1
+
+## Instalacion de aplicaciones
+
+git clone https://github.com/dnlbertoni/devops2401-pin.git /tmp/devops2401-pin
+
+cd /tmp/devops2401-pin/kubernetes/
+kubectl apply -f ./00-namespace.yaml
+kubectl apply -f ./01-nginx-deploment.yaml
+kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=rele ase-1.20"
+
 
 ## instalacion de Grafana y Prometheus
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
