@@ -1,0 +1,7 @@
+.terraform/
+.terraform*
+terraform.tfs*
+.vscode/
+bastion/terraform.tfvars
+*.pem
+*.plan
