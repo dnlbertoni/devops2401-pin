@@ -2,9 +2,9 @@
 
 # Variables de configuración
 #kubctl
-export AWS_REGION="us-east-1"
-export CLUSTER_NAME="eks-mundos2401-devops"
-export KEY_PAIR="devops"
+#export AWS_REGION="us-east-1"
+#export CLUSTER_NAME="eks-mundos2401-devops"
+#export KEY_PAIR="devops"
 ## Grafana y Prometheus
 export NAMESPACE_MONITORING="monitoring"
 export PROMETHEUS_RELEASE_NAME="prometheus"
@@ -12,7 +12,9 @@ export GRAFANA_RELEASE_NAME="grafana"
 export GRAFANA_PORT=8090
 
 
+## Instalacion del EKS
 aws sts get-caller-identity >> /dev/null
+
 if [ $? -eq 0 ]
 then
   echo "Credenciales testeadas, proceder con la creacion de cluster."
@@ -40,17 +42,39 @@ else
   echo "Cluster setup failed."
 fi
 
-
+## Actualizar kubeconfig
 aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
 
-## Instalacion de aplicaciones
-
+## Instalacion de aplicaciones del proyecto 
+#Desacarga del repositorio
 git clone https://github.com/dnlbertoni/devops2401-pin.git /tmp/devops2401-pin
 
 cd /tmp/devops2401-pin/kubernetes/
-kubectl apply -f ./00-namespace.yaml
-kubectl apply -f ./01-nginx-deploment.yaml
-kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=rele ase-1.20"
+
+kubectl apply -f ./00-nginx-deploment.yaml
+
+##Intalacion el EBS CSI Driver
+kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.30"
+
+eksctl create iamserviceaccount \
+ --name ebs-csi-controller-sa \
+ --region $AWS_REGION \
+ --namespace kube-system \
+ --cluster $CLUSTER_NAME \
+ --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+ --approve \
+ --role-only \
+ --role-name AmazonEKS_EBS_CSI_DriverRole
+
+ # Obtener el ID de la cuenta y almacenarlo en una variable
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+
+# Ejecutar el comando eksctl con la variable ACCOUNT_ID
+eksctl create addon \
+  --name aws-ebs-csi-driver \
+  --cluster $CLUSTER_NAME \
+  --service-account-role-arn arn:aws:iam::$ACCOUNT_ID:role/AmazonEKS_EBS_CSI_DriverRole \
+  --force
 
 
 ## instalacion de Grafana y Prometheus

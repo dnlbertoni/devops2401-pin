@@ -109,8 +109,9 @@ resource "aws_instance" "ec2_instance" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo echo AWS_REGION=${var.region} > /tmp/environment",
-      "sudo echo CLUSTER_NAME=${var.cluster_name} >> /tmp/environment",
+      "sudo echo AWS_REGION=${var.region} >> /home/${var.ec2_user}/.profile",
+      "sudo echo CLUSTER_NAME=${var.cluster_name} >> /home/${var.ec2_user}/.profile",
+      "sudo echo KEY_PAIR=${var.ec2_key_name} >> /home/${var.ec2_user}/.profile",
       "chmod +x /tmp/*.sh",
       "sudo apt update -y",
       "sudo apt install dos2unix -y",
