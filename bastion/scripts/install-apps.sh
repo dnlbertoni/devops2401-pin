@@ -3,7 +3,7 @@
 # Variables de configuración
 #kubctl
 export AWS_REGION="us-east-1"
-export CLUSTER_NAME="eks-mundos-240100"
+export CLUSTER_NAME="eks-mundos2401-devops"
 export KEY_PAIR="devops"
 ## Grafana y Prometheus
 export NAMESPACE_MONITORING="monitoring"
