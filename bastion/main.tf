@@ -95,10 +95,22 @@ resource "aws_instance" "ec2_instance" {
     }
   }
 
+    provisioner "file" {
+    source      = "./scripts/install-apps.sh"
+    destination = "/tmp/installApps.sh"
+
+    connection {
+      type        = "ssh"
+      user        = var.ec2_user
+      private_key = file(var.ssh_private_key) 
+      host        = self.public_ip
+    }
+  }
+
   provisioner "remote-exec" {
     inline = [
-      "sudo export AWS_REGION=${var.region} >> /etc/environment",
-      "sudo export EKS_CLUSTER_NAME=${var.cluster_name} >> /etc/environment",
+      "sudo export AWS_REGION=${var.region} > /tmp/environment",
+      "sudo export EKS_CLUSTER_NAME=${var.cluster_name} >> /tmp/environment",
       "chmod +x /tmp/install.sh",
       "sudo apt update -y",
       "sudo apt install dos2unix -y",
