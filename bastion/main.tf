@@ -107,11 +107,34 @@ resource "aws_instance" "ec2_instance" {
     }
   }
 
+    provisioner "file" {
+    source      = "./scripts/nginx.yaml"
+    destination = "/tmp/nginx.yaml"
+
+    connection {
+      type        = "ssh"
+      user        = var.ec2_user
+      private_key = file(var.ssh_private_key) 
+      host        = self.public_ip
+    }
+  }  
+
+    provisioner "file" {
+    source      = "./scripts/grafana.yaml"
+    destination = "/tmp/grafana.yaml"
+
+    connection {
+      type        = "ssh"
+      user        = var.ec2_user
+      private_key = file(var.ssh_private_key) 
+      host        = self.public_ip
+    }
+  } 
   provisioner "remote-exec" {
     inline = [
-      "sudo echo AWS_REGION=${var.region} >> /home/${var.ec2_user}/.profile",
-      "sudo echo CLUSTER_NAME=${var.cluster_name} >> /home/${var.ec2_user}/.profile",
-      "sudo echo KEY_PAIR=${var.ec2_key_name} >> /home/${var.ec2_user}/.profile",
+      "sudo echo export AWS_REGION=${var.region} >> /home/${var.ec2_user}/.profile",
+      "sudo echo export CLUSTER_NAME=${var.cluster_name} >> /home/${var.ec2_user}/.profile",
+      "sudo echo export KEY_PAIR=${var.ec2_key_name} >> /home/${var.ec2_user}/.profile",
       "chmod +x /tmp/*.sh",
       "sudo apt update -y",
       "sudo apt install dos2unix -y",
