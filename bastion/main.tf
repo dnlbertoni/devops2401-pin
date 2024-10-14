@@ -64,11 +64,6 @@ resource "aws_route_table_association" "eks_route_table_assoc" {
   route_table_id = aws_route_table.eks_route_table.id
 }
 
-
-
-
-
-
 # EC2 Instance
 resource "aws_instance" "ec2_instance" {
   ami                    = var.ec2_ami
@@ -135,6 +130,8 @@ resource "aws_instance" "ec2_instance" {
       "sudo echo export AWS_REGION=${var.region} >> /home/${var.ec2_user}/.profile",
       "sudo echo export CLUSTER_NAME=${var.cluster_name} >> /home/${var.ec2_user}/.profile",
       "sudo echo export KEY_PAIR=${var.ec2_key_name} >> /home/${var.ec2_user}/.profile",
+      "sudo echo export NODE_SIZE=${var.node_group_instance_type} >> /home/${var.ec2_user}/.profile",
+      "sudo echo export GRAFANA_PASS=${var.grafana_pass} >> /home/${var.ec2_user}/.profile",
       "chmod +x /tmp/*.sh",
       "sudo apt update -y",
       "sudo apt install dos2unix -y",

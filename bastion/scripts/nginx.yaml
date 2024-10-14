@@ -60,8 +60,3 @@ spec:
             name: nginx-service
             port:
               number: 80
-  # Descomenta si necesitas acceso SSL
-  # tls:
-  # - hosts:
-  #   - nginx.local
-  #   secretName: nginx-tls-secret

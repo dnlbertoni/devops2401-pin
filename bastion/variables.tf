@@ -80,3 +80,9 @@ variable "ec2_user" {
   type        = string
   default = "ubuntu"
 }
+
+variable "grafana_pass" {
+  description = "Password para Grafana"
+  type        = string
+  default = "EKS!sAWSome"
+}

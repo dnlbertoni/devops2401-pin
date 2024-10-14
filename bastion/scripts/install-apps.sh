@@ -1,15 +1,5 @@
 #!/bin/bash
 
-# Variables de configuración
-#kubctl
-#export AWS_REGION="us-east-1"
-#export CLUSTER_NAME="eks-mundos2401-devops"
-#export KEY_PAIR="devops"
-## Grafana y Prometheus
-export NAMESPACE="monitoring"
-export GRAFANA_PORT=8090
-
-
 ## Instalacion del EKS
 aws sts get-caller-identity >> /dev/null
 
@@ -17,7 +7,7 @@ eksctl create cluster \
   --name $CLUSTER_NAME \
   --region $AWS_REGION \
   --nodes 3 \
-  --node-type t2.large \
+  --node-type $NODE_SIZE \
   --with-oidc \
   --ssh-access \
   --ssh-public-key $KEY_PAIR \
@@ -61,6 +51,11 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo add grafana https://grafana.github.io/helm-charts
 
 helm repo update
+
+
+## Grafana y Prometheus
+
+
 # Crear el namespace prometheus
 kubectl create namespace prometheus
 
@@ -78,10 +73,11 @@ kubectl get all -n prometheus
 kubectl port-forward -n prometheus deploy/prometheus-server 8080:9090 --address 0.0.0.0
 
 kubectl create namespace grafana
+
 helm install grafana grafana/grafana \
     --namespace grafana \
     --set persistence.storageClassName="gp2" \
     --set persistence.enabled=true \
-    --set adminPassword='EKS!sAWSome' \
+    --set adminPassword=$GRAFANA_PASS \
     --values /tmp/grafana.yaml \
     --set service.type=LoadBalancer
